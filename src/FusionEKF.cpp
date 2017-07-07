@@ -37,7 +37,9 @@ FusionEKF::FusionEKF() {
     * Set the process and measurement noises
   */
 
-
+  //set the acceleration noise components
+  noise_ax = 9;
+  noise_ay = 9;
 }
 
 /**
@@ -62,6 +64,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     cout << "EKF: " << endl;
     ekf_.x_ = VectorXd(4);
     ekf_.x_ << 1, 1, 1, 1;
+    previous_timestamp_ = measurement_pack.timestamp_;
+    ekf_.Q_ = MatrixXd(4, 4);
 
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
       /**
@@ -72,6 +76,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       /**
       Initialize state.
       */
+      ekf.x_ << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1], 0, 0;
     }
 
     // done initializing, no need to predict or update
