@@ -41,6 +41,16 @@ FusionEKF::FusionEKF() {
   //set the acceleration noise components
   noise_ax = 9;
   noise_ay = 9;
+
+  ekf_.P_ = MatrixXd(4, 4);
+  ekf_.P_ << 1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1000, 0,
+        0, 0, 0, 1000;
+
+  ekf_.H_ = MatrixXd(2, 4);
+  ekf_.H_ << 1, 0, 0, 0,
+            0, 1, 0, 0;
 }
 
 /**
@@ -66,20 +76,13 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     ekf_.x_ = VectorXd(4);
     // ekf_.x_ << 1, 1, 1, 1;
     previous_timestamp_ = measurement_pack.timestamp_;
-    ekf_.Q_ = MatrixXd(4, 4);
-    ekf_.H_ = MatrixXd(4, 4);
-    ekf_.R_ = MatrixXd(4, 4);
-    ekf_.F_ = MatrixXd(4, 4);
-    ekf_.H_ = MatrixXd(2, 4);
-    ekf_.H_ << 1, 0, 0, 0,
-              0, 1, 0, 0;
-
+    
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
       /**
       Convert radar from polar to cartesian coordinates and initialize state.
       */
-      ekf_.x_ << sin(measurement_pack.raw_measurements_[1]) * measurement_pack.raw_measurements_[0],
-                cos(measurement_pack.raw_measurements_[1]) * measurement_pack.raw_measurements_[0], 0, 0;
+      ekf_.x_ << cos(measurement_pack.raw_measurements_[1]) * measurement_pack.raw_measurements_[0],
+                sin(measurement_pack.raw_measurements_[1]) * measurement_pack.raw_measurements_[0], 0, 0;
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
       /**
@@ -108,12 +111,15 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   float dt2 = dt * dt;
   float dt3 = dt2 * dt;
   float dt4 = dt3 * dt;
+  previous_timestamp_ = measurement_pack.timestamp_;
 
+  ekf_.F_ = MatrixXd(4, 4);
   ekf_.F_ << 1, 0, dt, 0,
           0, 1, 0, dt,
           0, 0, 1, 0,
           0, 0, 0, 1;
 
+  ekf_.Q_ = MatrixXd(4, 4);
   ekf_.Q_ << dt4 * noise_ax / 4, 0, dt3 * noise_ax / 2, 0,
             0, dt4 * noise_ay / 4, 0, dt3 * noise_ay / 2,
             dt3 * noise_ax / 2, 0, dt2 * noise_ax, 0,
