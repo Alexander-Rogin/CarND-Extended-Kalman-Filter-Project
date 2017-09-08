@@ -76,6 +76,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     ekf_.x_ = VectorXd(4);
     // ekf_.x_ << 1, 1, 1, 1;
     previous_timestamp_ = measurement_pack.timestamp_;
+    // cout << measurement_pack.raw_measurements_[0] << measurement_pack.raw_measurements_[1] << endl;
     
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
       /**
@@ -149,9 +150,10 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   }
 
   // print the output
-  cout << "x_ = " << ekf_.x_ << endl;
-  cout << "P_ = " << ekf_.P_ << endl;
+  // cout << "x_ = " << ekf_.x_ << endl;
+  // cout << "P_ = " << ekf_.P_ << endl;
+  // cout << "gt = " <<  << endl;
 
   count++;
-  if (count == 5) exit(0);
+  if (count == 15) exit(0);
 }
