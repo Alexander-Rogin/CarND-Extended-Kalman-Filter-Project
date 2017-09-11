@@ -4,6 +4,8 @@
 #include <iostream>
 #include <math.h>
 
+#define EPS   0.0001
+
 using namespace std;
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -41,6 +43,8 @@ FusionEKF::FusionEKF() {
   //set the acceleration noise components
   noise_ax = 9.0;
   noise_ay = 9.0;
+  H_laser_ << 1, 0, 0, 0,
+              0, 1, 0, 0;
 }
 
 /**
@@ -65,19 +69,29 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     ekf_.x_ = VectorXd(4);
     previous_timestamp_ = measurement_pack.timestamp_;
     
+    double x, y;
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
       /**
       Convert radar from polar to cartesian coordinates and initialize state.
       */
-      ekf_.x_ << cos(measurement_pack.raw_measurements_[1]) * measurement_pack.raw_measurements_[0],
-                sin(measurement_pack.raw_measurements_[1]) * measurement_pack.raw_measurements_[0], 0, 0;
+      double rho = measurement_pack.raw_measurements_[0];
+      double phi = measurement_pack.raw_measurements_[1];
+      double rho_dot = measurement_pack.raw_measurements_[2];
+      x = rho * cos(phi);
+      y = rho * sin(phi);
     }
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
       /**
       Initialize state.
       */
-      ekf_.x_ << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1], 0, 0;
+      x = measurement_pack.raw_measurements_[0];
+      y = measurement_pack.raw_measurements_[1];
     }
+    if (x < EPS)
+      x = EPS;
+    if (y < EPS)
+      y = EPS;
+    ekf_.x_ << x, y, 0, 0;
     cout << "EKF initial: " << endl;
     cout << "x_ = " << ekf_.x_ << endl;
 
@@ -136,7 +150,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
     // Radar updates
-    // ekf_.H_ = tools.CalculateJacobian(ekf_.x_);
+    ekf_.H_ = tools.CalculateJacobian(ekf_.x_);
     ekf_.R_ = R_radar_;
     ekf_.UpdateEKF(measurement_pack.raw_measurements_);
   } else {
