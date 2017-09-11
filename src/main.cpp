@@ -136,8 +136,6 @@ int main()
           auto msg = "42[\"estimate_marker\"," + msgJson.dump() + "]";
           // std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-          cout << "!! estimate_x: " << p_x << "; estimate_y: " << p_y << "; gt_x: " << x_gt << "; gt_y: " << y_gt << endl;
-	  
         }
       } else {
         

@@ -39,18 +39,8 @@ FusionEKF::FusionEKF() {
   */
 
   //set the acceleration noise components
-  noise_ax = 9;
-  noise_ay = 9;
-
-  ekf_.P_ = MatrixXd(4, 4);
-  ekf_.P_ << 1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1000, 0,
-        0, 0, 0, 1000;
-
-  ekf_.H_ = MatrixXd(2, 4);
-  ekf_.H_ << 1, 0, 0, 0,
-            0, 1, 0, 0;
+  noise_ax = 9.0;
+  noise_ay = 9.0;
 }
 
 /**
@@ -72,11 +62,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       * Remember: you'll need to convert radar from polar to cartesian coordinates.
     */
     // first measurement
-    cout << "EKF: " << endl;
     ekf_.x_ = VectorXd(4);
-    // ekf_.x_ << 1, 1, 1, 1;
     previous_timestamp_ = measurement_pack.timestamp_;
-    // cout << measurement_pack.raw_measurements_[0] << measurement_pack.raw_measurements_[1] << endl;
     
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
       /**
@@ -91,6 +78,15 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       */
       ekf_.x_ << measurement_pack.raw_measurements_[0], measurement_pack.raw_measurements_[1], 0, 0;
     }
+    cout << "EKF initial: " << endl;
+    cout << "x_ = " << ekf_.x_ << endl;
+
+    ekf_.P_ = MatrixXd(4, 4);
+    ekf_.P_ << 1, 0, 0, 0,
+              0, 1, 0, 0,
+              0, 0, 1000, 0,
+              0, 0, 0, 1000;
+    cout << "P_ = " << ekf_.P_ << endl;
 
     // done initializing, no need to predict or update
     is_initialized_ = true;
@@ -108,7 +104,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
      * Update the process noise covariance matrix.
      * Use noise_ax = 9 and noise_ay = 9 for your Q matrix.
    */
-  static int count = 0;
   float dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0;
   float dt2 = dt * dt;
   float dt3 = dt2 * dt;
@@ -141,19 +136,16 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
 
   if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
     // Radar updates
+    // ekf_.H_ = tools.CalculateJacobian(ekf_.x_);
     ekf_.R_ = R_radar_;
     ekf_.UpdateEKF(measurement_pack.raw_measurements_);
   } else {
     // Laser updates
+    ekf_.H_ = H_laser_;
     ekf_.R_ = R_laser_;
     ekf_.Update(measurement_pack.raw_measurements_);
   }
-
   // print the output
-  // cout << "x_ = " << ekf_.x_ << endl;
-  // cout << "P_ = " << ekf_.P_ << endl;
-  // cout << "gt = " <<  << endl;
-
-  count++;
-  if (count == 15) exit(0);
+  cout << "x_ = " << ekf_.x_ << endl;
+  cout << "P_ = " << ekf_.P_ << endl;
 }
